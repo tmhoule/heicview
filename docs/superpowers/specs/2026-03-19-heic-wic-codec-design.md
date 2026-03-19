@@ -121,6 +121,21 @@ Minimum versions: libheif >= 1.17.0, libde265 >= 1.0.15.
 - **Output:** `heic_wic.dll`, `libheif.dll`, `libde265.dll`
 - **Versioning:** SemVer (e.g., 1.0.0) embedded in the DLL's VERSIONINFO resource. BigFix relevance checks minimum version, not just presence.
 
+### CI/CD — GitHub Actions
+
+Development happens on macOS; the codec is built on GitHub's `windows-latest` runners via a CI workflow.
+
+**Workflow:** `.github/workflows/build.yml`
+
+- **Trigger:** Push to `main`, pull requests, and manual dispatch
+- **Runner:** `windows-latest` (provides MSVC and CMake)
+- **Steps:**
+  1. Checkout code
+  2. Configure CMake (Release, x64)
+  3. Build — produces `heic_wic.dll`, `libheif.dll`, `libde265.dll`
+  4. Upload build artifacts as a ZIP (the three DLLs + installer scripts)
+- **Release workflow:** On tagged pushes (`v*`), create a GitHub Release with the artifact ZIP attached — this is the package BigFix deploys
+
 ## Installer
 
 ### install.ps1
