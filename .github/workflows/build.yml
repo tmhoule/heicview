@@ -32,7 +32,10 @@ jobs:
         run: |
           cd build
           Get-ChildItem Release/*.dll | Copy-Item -Destination .
+          Write-Host "=== Test 1: synthetic 4x4 ==="
           Release/test_decode.exe test/samples/test.heic
+          Write-Host "=== Test 2: real iPhone photo ==="
+          Release/test_decode.exe test/samples/sewing-threads.heic
         shell: pwsh
 
       - name: Collect artifacts

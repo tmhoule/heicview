@@ -100,6 +100,23 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Check pixel values — print first few pixels and some stats
+    UINT nonZero = 0;
+    UINT nonWhite = 0;
+    for (UINT i = 0; i < bufSize; i++) {
+        if (pixels[i] != 0) nonZero++;
+        if (pixels[i] != 0xFF) nonWhite++;
+    }
+    printf("Pixel stats: %u/%u bytes non-zero, %u/%u bytes non-0xFF\n",
+           nonZero, bufSize, nonWhite, bufSize);
+
+    // Print first 4 pixels (BGRA)
+    UINT pixelsToPrint = (w * h < 4) ? w * h : 4;
+    for (UINT i = 0; i < pixelsToPrint; i++) {
+        printf("  pixel[%u] = B:%u G:%u R:%u A:%u\n", i,
+               pixels[i*4+0], pixels[i*4+1], pixels[i*4+2], pixels[i*4+3]);
+    }
+
     printf("PASS: decoded %u x %u HEIC image (%u bytes)\n", w, h, bufSize);
 
     free(pixels);
