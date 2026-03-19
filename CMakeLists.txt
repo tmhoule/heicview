@@ -13,6 +13,7 @@ add_library(heic_wic SHARED
     src/class_factory.cpp
     src/codec.cpp
     src/frame_decode.cpp
+    src/metadata_reader.cpp
     src/heic_wic.def
     src/version.rc
 )

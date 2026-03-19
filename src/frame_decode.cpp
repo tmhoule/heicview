@@ -13,6 +13,10 @@ HeicFrameDecode::HeicFrameDecode() {
 }
 
 HeicFrameDecode::~HeicFrameDecode() {
+    if (m_metadataReader) {
+        m_metadataReader->Release();
+        m_metadataReader = nullptr;
+    }
     DeleteCriticalSection(&m_cs);
     COMCounter::ObjectDestroyed();
 }
@@ -29,6 +33,11 @@ STDMETHODIMP HeicFrameDecode::QueryInterface(REFIID riid, void** ppv) {
             riid == IID_IWICBitmapFrameDecode) {
             *ppv = static_cast<IWICBitmapFrameDecode*>(this);
             AddRef();
+            return S_OK;
+        }
+        if (riid == IID_IWICMetadataBlockReader && m_metadataReader) {
+            *ppv = static_cast<IWICMetadataBlockReader*>(m_metadataReader);
+            m_metadataReader->AddRef();
             return S_OK;
         }
         *ppv = nullptr;
@@ -109,7 +118,13 @@ HRESULT HeicFrameDecode::DecodeImage(heif_image_handle* handle) {
     // 5. Free heif_image
     heif_image_release(img);
 
-    // 6. Free heif_image_handle (we took ownership)
+    // 6. Extract EXIF metadata BEFORE freeing the handle
+    m_metadataReader = new(std::nothrow) HeicMetadataBlockReader();
+    if (m_metadataReader) {
+        m_metadataReader->Initialize(handle);
+    }
+
+    // 7. Free heif_image_handle (we took ownership)
     heif_image_handle_release(handle);
 
     return S_OK;

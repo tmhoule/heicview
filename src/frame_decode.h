@@ -1,5 +1,6 @@
 #pragma once
 #include "common.h"
+#include "metadata_reader.h"
 #include <libheif/heif.h>
 #include <vector>
 
@@ -36,4 +37,5 @@ private:
     UINT m_width = 0;
     UINT m_height = 0;
     CRITICAL_SECTION m_cs;
+    HeicMetadataBlockReader* m_metadataReader = nullptr;
 };
