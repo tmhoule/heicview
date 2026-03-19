@@ -1,4 +1,5 @@
 #include "codec.h"
+#include "frame_decode.h"
 #include "com_counter.h"
 #include <stdexcept>
 
@@ -172,8 +173,6 @@ STDMETHODIMP HeicDecoder::GetFrame(UINT index, IWICBitmapFrameDecode** ppIBitmap
         if (!ppIBitmapFrame) return E_INVALIDARG;
         if (!m_initialized) return WINCODEC_ERR_NOTINITIALIZED;
 
-        // TODO: Task 4 will implement HeicFrameDecode.
-        // For now, validate the handle can be obtained but return E_NOTIMPL.
         EnterCriticalSection(&m_cs);
 
         heif_image_handle* handle = nullptr;
@@ -192,13 +191,27 @@ STDMETHODIMP HeicDecoder::GetFrame(UINT index, IWICBitmapFrameDecode** ppIBitmap
             err = heif_context_get_image_handle(m_ctx, ids[index], &handle);
         }
 
-        if (handle) heif_image_handle_release(handle);
         LeaveCriticalSection(&m_cs);
 
-        if (err.code != heif_error_Ok) return WINCODEC_ERR_BADIMAGE;
+        if (err.code != heif_error_Ok || !handle) return WINCODEC_ERR_BADIMAGE;
 
-        *ppIBitmapFrame = nullptr;
-        return E_NOTIMPL;
+        // Create frame decoder — it takes ownership of the handle
+        HeicFrameDecode* frame = new (std::nothrow) HeicFrameDecode();
+        if (!frame) {
+            heif_image_handle_release(handle);
+            return E_OUTOFMEMORY;
+        }
+
+        HRESULT hr = frame->Initialize(handle);  // handle ownership transferred
+        if (FAILED(hr)) {
+            frame->Release();
+            return hr;
+        }
+
+        hr = frame->QueryInterface(IID_IWICBitmapFrameDecode,
+                                    reinterpret_cast<void**>(ppIBitmapFrame));
+        frame->Release();
+        return hr;
     }
     catch (std::bad_alloc&) { return E_OUTOFMEMORY; }
     catch (...) { return WINCODEC_ERR_GENERIC_ERROR; }
