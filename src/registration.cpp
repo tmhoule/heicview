@@ -1,6 +1,7 @@
 #include "registration.h"
 #include <wincodec.h>
 #include <objbase.h>
+#include <cstdio>
 
 // ---------------------------------------------------------------------------
 // Internal helpers
