@@ -2,9 +2,6 @@
   "name": "heic-wic-codec",
   "version": "1.0.0",
   "dependencies": [
-    {
-      "name": "libheif",
-      "features": ["libde265"]
-    }
+    "libheif"
   ]
 }
