@@ -1,6 +1,7 @@
 #include "common.h"
 #include "com_counter.h"
 #include "class_factory.h"
+#include "registration.h"
 
 HMODULE g_hModule = nullptr;
 
@@ -26,9 +27,9 @@ STDAPI DllCanUnloadNow() {
 }
 
 STDAPI DllRegisterServer() {
-    return S_OK; // Implemented in Task 6
+    return RegisterWICDecoder(g_hModule);
 }
 
 STDAPI DllUnregisterServer() {
-    return S_OK; // Implemented in Task 6
+    return UnregisterWICDecoder();
 }
