@@ -10,6 +10,7 @@ find_package(libheif CONFIG REQUIRED)
 # Our WIC codec DLL — include .def file in sources (CMake handles it for MSVC)
 add_library(heic_wic SHARED
     src/dll_main.cpp
+    src/class_factory.cpp
     src/heic_wic.def
     src/version.rc
 )

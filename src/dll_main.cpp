@@ -1,4 +1,6 @@
 #include "common.h"
+#include "com_counter.h"
+#include "class_factory.h"
 
 HMODULE g_hModule = nullptr;
 
@@ -10,18 +12,23 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     return TRUE;
 }
 
-STDAPI DllGetClassObject(REFCLSID, REFIID, LPVOID*) {
-    return CLASS_E_CLASSNOTAVAILABLE;
+STDAPI DllGetClassObject(REFCLSID clsid, REFIID riid, LPVOID* ppv) {
+    if (clsid != CLSID_HeicDecoder) return CLASS_E_CLASSNOTAVAILABLE;
+    auto* factory = new(std::nothrow) ClassFactory();
+    if (!factory) return E_OUTOFMEMORY;
+    HRESULT hr = factory->QueryInterface(riid, ppv);
+    factory->Release();
+    return hr;
 }
 
 STDAPI DllCanUnloadNow() {
-    return S_OK;
+    return COMCounter::CanUnload() ? S_OK : S_FALSE;
 }
 
 STDAPI DllRegisterServer() {
-    return S_OK;
+    return S_OK; // Implemented in Task 6
 }
 
 STDAPI DllUnregisterServer() {
-    return S_OK;
+    return S_OK; // Implemented in Task 6
 }
