@@ -1,3 +1,4 @@
+#include <initguid.h>
 #include "common.h"
 #include "com_counter.h"
 #include "class_factory.h"
