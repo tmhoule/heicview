@@ -11,6 +11,7 @@ find_package(libheif CONFIG REQUIRED)
 add_library(heic_wic SHARED
     src/dll_main.cpp
     src/class_factory.cpp
+    src/codec.cpp
     src/heic_wic.def
     src/version.rc
 )

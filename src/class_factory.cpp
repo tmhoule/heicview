@@ -1,5 +1,6 @@
 #include "class_factory.h"
 #include "com_counter.h"
+#include "codec.h"
 
 ClassFactory::ClassFactory() { COMCounter::ObjectCreated(); }
 ClassFactory::~ClassFactory() {}
@@ -33,8 +34,12 @@ STDMETHODIMP ClassFactory::CreateInstance(IUnknown* pOuter, REFIID riid, void** 
     if (!ppv) return E_INVALIDARG;
     *ppv = nullptr;
 
-    // TODO: Task 3 will create HeicDecoder here
-    return E_NOINTERFACE;
+    // Always create the object and let QueryInterface handle interface negotiation
+    auto* decoder = new(std::nothrow) HeicDecoder();
+    if (!decoder) return E_OUTOFMEMORY;
+    HRESULT hr = decoder->QueryInterface(riid, ppv);
+    decoder->Release();
+    return hr;
 }
 
 STDMETHODIMP ClassFactory::LockServer(BOOL lock) {
