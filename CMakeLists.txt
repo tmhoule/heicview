@@ -30,3 +30,14 @@ add_custom_command(TARGET heic_wic POST_BUILD
         "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin"
         $<TARGET_FILE_DIR:heic_wic>
 )
+
+# Test executable
+add_executable(test_decode test/test_decode.cpp)
+target_link_libraries(test_decode PRIVATE ole32 shlwapi windowscodecs)
+
+# Copy test HEIC sample to build dir at build time
+add_custom_command(TARGET test_decode POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/test/samples
+        ${CMAKE_BINARY_DIR}/test/samples
+)

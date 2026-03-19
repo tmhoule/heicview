@@ -28,6 +28,13 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
+      - name: Test
+        run: |
+          cd build
+          Get-ChildItem Release/*.dll | Copy-Item -Destination .
+          Release/test_decode.exe test/samples/test.heic
+        shell: pwsh
+
       - name: Collect artifacts
         run: |
           mkdir artifact
