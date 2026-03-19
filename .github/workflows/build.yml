@@ -1,0 +1,60 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  VCPKG_DEFAULT_TRIPLET: x64-windows
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'a34c873a9717a888f58dc05268dea15592c2f0ff'
+
+      - name: Configure CMake
+        run: cmake -B build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Collect artifacts
+        run: |
+          mkdir artifact
+          Get-ChildItem build/Release/*.dll | Copy-Item -Destination artifact/
+          Copy-Item installer/install.ps1 artifact/
+          Copy-Item installer/uninstall.ps1 artifact/
+          Get-ChildItem artifact/
+        shell: pwsh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: heic-wic-codec
+          path: artifact/
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: heic-wic-codec
+          path: artifact/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifact/*
