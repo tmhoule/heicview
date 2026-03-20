@@ -3,7 +3,7 @@
 
 class ClassFactory : public IClassFactory {
 public:
-    ClassFactory();
+    explicit ClassFactory(REFCLSID clsid);
     ~ClassFactory();
 
     // IUnknown
@@ -17,4 +17,5 @@ public:
 
 private:
     volatile LONG m_refCount = 1;
+    CLSID m_clsid;
 };

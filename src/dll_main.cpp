@@ -15,8 +15,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
 }
 
 STDAPI DllGetClassObject(REFCLSID clsid, REFIID riid, LPVOID* ppv) {
-    if (clsid != CLSID_HeicDecoder) return CLASS_E_CLASSNOTAVAILABLE;
-    auto* factory = new(std::nothrow) ClassFactory();
+    if (clsid != CLSID_HeicDecoder && clsid != CLSID_HeicThumbnailProvider)
+        return CLASS_E_CLASSNOTAVAILABLE;
+    auto* factory = new(std::nothrow) ClassFactory(clsid);
     if (!factory) return E_OUTOFMEMORY;
     HRESULT hr = factory->QueryInterface(riid, ppv);
     factory->Release();
@@ -28,9 +29,13 @@ STDAPI DllCanUnloadNow() {
 }
 
 STDAPI DllRegisterServer() {
-    return RegisterWICDecoder(g_hModule);
+    HRESULT hr = RegisterWICDecoder(g_hModule);
+    if (SUCCEEDED(hr))
+        hr = RegisterThumbnailProvider(g_hModule);
+    return hr;
 }
 
 STDAPI DllUnregisterServer() {
+    UnregisterThumbnailProvider();
     return UnregisterWICDecoder();
 }

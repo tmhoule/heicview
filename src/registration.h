@@ -3,3 +3,6 @@
 
 HRESULT RegisterWICDecoder(HMODULE hModule);
 HRESULT UnregisterWICDecoder();
+
+HRESULT RegisterThumbnailProvider(HMODULE hModule);
+HRESULT UnregisterThumbnailProvider();

@@ -1,8 +1,9 @@
 #include "class_factory.h"
 #include "com_counter.h"
 #include "codec.h"
+#include "thumbnail_provider.h"
 
-ClassFactory::ClassFactory() { COMCounter::ObjectCreated(); }
+ClassFactory::ClassFactory(REFCLSID clsid) : m_clsid(clsid) { COMCounter::ObjectCreated(); }
 ClassFactory::~ClassFactory() {}
 
 STDMETHODIMP ClassFactory::QueryInterface(REFIID riid, void** ppv) {
@@ -34,11 +35,15 @@ STDMETHODIMP ClassFactory::CreateInstance(IUnknown* pOuter, REFIID riid, void** 
     if (!ppv) return E_INVALIDARG;
     *ppv = nullptr;
 
-    // Always create the object and let QueryInterface handle interface negotiation
-    auto* decoder = new(std::nothrow) HeicDecoder();
-    if (!decoder) return E_OUTOFMEMORY;
-    HRESULT hr = decoder->QueryInterface(riid, ppv);
-    decoder->Release();
+    IUnknown* obj = nullptr;
+    if (m_clsid == CLSID_HeicDecoder) {
+        obj = static_cast<IWICBitmapDecoder*>(new(std::nothrow) HeicDecoder());
+    } else if (m_clsid == CLSID_HeicThumbnailProvider) {
+        obj = static_cast<IThumbnailProvider*>(new(std::nothrow) HeicThumbnailProvider());
+    }
+    if (!obj) return E_OUTOFMEMORY;
+    HRESULT hr = obj->QueryInterface(riid, ppv);
+    obj->Release();
     return hr;
 }
 

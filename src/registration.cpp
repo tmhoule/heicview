@@ -198,3 +198,114 @@ HRESULT UnregisterWICDecoder()
 
     return S_OK;
 }
+
+// ---------------------------------------------------------------------------
+// RegisterThumbnailProvider
+// ---------------------------------------------------------------------------
+
+HRESULT RegisterThumbnailProvider(HMODULE hModule)
+{
+    wchar_t dllPath[MAX_PATH] = {};
+    if (GetModuleFileNameW(hModule, dllPath, MAX_PATH) == 0)
+        return HRESULT_FROM_WIN32(GetLastError());
+
+    wchar_t clsidStr[39] = {};
+    GuidToString(CLSID_HeicThumbnailProvider, clsidStr, 39);
+
+    // 1.  HKLM\SOFTWARE\Classes\CLSID\{CLSID_HeicThumbnailProvider}
+    wchar_t clsidKeyPath[256] = {};
+    _snwprintf_s(clsidKeyPath, _countof(clsidKeyPath), _TRUNCATE,
+                 L"SOFTWARE\\Classes\\CLSID\\%s", clsidStr);
+
+    HKEY hClsidKey = nullptr;
+    LONG lr = RegCreateKeyExW(HKEY_LOCAL_MACHINE, clsidKeyPath,
+                               0, nullptr, REG_OPTION_NON_VOLATILE,
+                               KEY_WRITE, nullptr, &hClsidKey, nullptr);
+    if (lr != ERROR_SUCCESS) return HRESULT_FROM_WIN32(lr);
+
+    SetRegistryString(hClsidKey, nullptr, L"HEIC Thumbnail Provider");
+    RegCloseKey(hClsidKey);
+
+    // 1a. InprocServer32
+    wchar_t inprocPath[300] = {};
+    _snwprintf_s(inprocPath, _countof(inprocPath), _TRUNCATE,
+                 L"%s\\InprocServer32", clsidKeyPath);
+
+    HKEY hInproc = nullptr;
+    lr = RegCreateKeyExW(HKEY_LOCAL_MACHINE, inprocPath,
+                          0, nullptr, REG_OPTION_NON_VOLATILE,
+                          KEY_WRITE, nullptr, &hInproc, nullptr);
+    if (lr == ERROR_SUCCESS) {
+        SetRegistryString(hInproc, nullptr,           dllPath);
+        SetRegistryString(hInproc, L"ThreadingModel", L"Both");
+        RegCloseKey(hInproc);
+    }
+
+    // 2.  Register as IThumbnailProvider for .heic and .heif
+    //     HKCR\.heic\shellex\{E357FCCD-A995-4576-B01F-234630154E96}
+    const wchar_t* extensions[] = { L".heic", L".heif" };
+    for (const wchar_t* ext : extensions) {
+        wchar_t shellexPath[256] = {};
+        _snwprintf_s(shellexPath, _countof(shellexPath), _TRUNCATE,
+                     L"%s\\shellex\\{E357FCCD-A995-4576-B01F-234630154E96}", ext);
+
+        HKEY hShellEx = nullptr;
+        lr = RegCreateKeyExW(HKEY_CLASSES_ROOT, shellexPath,
+                              0, nullptr, REG_OPTION_NON_VOLATILE,
+                              KEY_WRITE, nullptr, &hShellEx, nullptr);
+        if (lr == ERROR_SUCCESS) {
+            SetRegistryString(hShellEx, nullptr, clsidStr);
+            RegCloseKey(hShellEx);
+        }
+    }
+
+    // 3.  Approved shell extensions list
+    HKEY hApproved = nullptr;
+    lr = RegCreateKeyExW(HKEY_LOCAL_MACHINE,
+        L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved",
+        0, nullptr, REG_OPTION_NON_VOLATILE,
+        KEY_WRITE, nullptr, &hApproved, nullptr);
+    if (lr == ERROR_SUCCESS) {
+        SetRegistryString(hApproved, clsidStr, L"HEIC Thumbnail Provider");
+        RegCloseKey(hApproved);
+    }
+
+    return S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// UnregisterThumbnailProvider
+// ---------------------------------------------------------------------------
+
+HRESULT UnregisterThumbnailProvider()
+{
+    wchar_t clsidStr[39] = {};
+    GuidToString(CLSID_HeicThumbnailProvider, clsidStr, 39);
+
+    // 1. Delete CLSID key
+    wchar_t clsidKeyPath[256] = {};
+    _snwprintf_s(clsidKeyPath, _countof(clsidKeyPath), _TRUNCATE,
+                 L"SOFTWARE\\Classes\\CLSID\\%s", clsidStr);
+    RegDeleteTreeW(HKEY_LOCAL_MACHINE, clsidKeyPath);
+
+    // 2. Remove shellex registrations
+    const wchar_t* extensions[] = { L".heic", L".heif" };
+    for (const wchar_t* ext : extensions) {
+        wchar_t shellexPath[256] = {};
+        _snwprintf_s(shellexPath, _countof(shellexPath), _TRUNCATE,
+                     L"%s\\shellex\\{E357FCCD-A995-4576-B01F-234630154E96}", ext);
+        RegDeleteTreeW(HKEY_CLASSES_ROOT, shellexPath);
+    }
+
+    // 3. Remove from approved list
+    HKEY hApproved = nullptr;
+    LONG lr = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+        L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved",
+        0, KEY_WRITE, &hApproved);
+    if (lr == ERROR_SUCCESS) {
+        RegDeleteValueW(hApproved, clsidStr);
+        RegCloseKey(hApproved);
+    }
+
+    return S_OK;
+}

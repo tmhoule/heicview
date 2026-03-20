@@ -15,13 +15,14 @@ add_library(heic_wic SHARED
     src/frame_decode.cpp
     src/metadata_reader.cpp
     src/registration.cpp
+    src/thumbnail_provider.cpp
     src/heic_wic.def
     src/version.rc
 )
 
 target_include_directories(heic_wic PRIVATE src)
 # Note: vcpkg target may be heif::heif — check find_package output and adjust
-target_link_libraries(heic_wic PRIVATE heif ole32 shlwapi windowscodecs advapi32)
+target_link_libraries(heic_wic PRIVATE heif ole32 shlwapi windowscodecs advapi32 gdi32)
 set_target_properties(heic_wic PROPERTIES OUTPUT_NAME "heic_wic")
 
 # Copy dependency DLLs next to our DLL for packaging
