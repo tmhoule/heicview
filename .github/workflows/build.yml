@@ -36,12 +36,17 @@ jobs:
           Release/test_decode.exe test/samples/test.heic
           Write-Host "=== Test 2: real iPhone photo ==="
           Release/test_decode.exe test/samples/sewing-threads.heic
+          Write-Host "=== Test 3: WIC discovery (register, then use WIC factory) ==="
+          regsvr32 /s heic_wic.dll
+          Release/test_wic_discovery.exe test/samples/sewing-threads.heic
+          regsvr32 /u /s heic_wic.dll
         shell: pwsh
 
       - name: Collect artifacts
         run: |
           mkdir artifact
           Get-ChildItem build/Release/*.dll | Copy-Item -Destination artifact/
+          Get-ChildItem build/Release/*.exe | Copy-Item -Destination artifact/
           Copy-Item installer/install.ps1 artifact/
           Copy-Item installer/uninstall.ps1 artifact/
           Get-ChildItem artifact/

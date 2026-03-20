@@ -31,9 +31,12 @@ add_custom_command(TARGET heic_wic POST_BUILD
         $<TARGET_FILE_DIR:heic_wic>
 )
 
-# Test executable
+# Test executables
 add_executable(test_decode test/test_decode.cpp)
 target_link_libraries(test_decode PRIVATE ole32 shlwapi windowscodecs)
+
+add_executable(test_wic_discovery test/test_wic_discovery.cpp)
+target_link_libraries(test_wic_discovery PRIVATE ole32 shlwapi windowscodecs)
 
 # Copy test HEIC sample to build dir at build time
 add_custom_command(TARGET test_decode POST_BUILD
