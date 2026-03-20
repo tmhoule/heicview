@@ -71,16 +71,21 @@ HRESULT RegisterWICDecoder(HMODULE hModule)
                                KEY_WRITE, nullptr, &hClsidKey, nullptr);
     if (lr != ERROR_SUCCESS) return HRESULT_FROM_WIN32(lr);
 
-    // Values on the CLSID key itself.
-    SetRegistryString(hClsidKey, nullptr,           L"HEIC WIC Codec");
-    SetRegistryString(hClsidKey, L"Author",         L"HEICconvert");
-    SetRegistryString(hClsidKey, L"Description",    L"HEIC WIC Codec");
-    SetRegistryString(hClsidKey, L"FileExtensions", L".heic,.heif");
-    SetRegistryString(hClsidKey, L"FriendlyName",   L"HEIC WIC Codec");
-    SetRegistryString(hClsidKey, L"ContainerFormat",containerFmtStr);
-    SetRegistryString(hClsidKey, L"MimeTypes",      L"image/heic,image/heif");
-    SetRegistryString(hClsidKey, L"Vendor",         vendorStr);
-    SetRegistryString(hClsidKey, L"Version",        L"1.0.0");
+    // Values on the CLSID key itself (all required per MS docs).
+    SetRegistryString(hClsidKey, nullptr,              L"HEIC WIC Codec");
+    SetRegistryString(hClsidKey, L"Author",            L"HEICconvert");
+    SetRegistryString(hClsidKey, L"Description",       L"HEIC WIC Codec");
+    SetRegistryString(hClsidKey, L"FileExtensions",    L".heic,.heif");
+    SetRegistryString(hClsidKey, L"FriendlyName",      L"HEIC WIC Codec");
+    SetRegistryString(hClsidKey, L"ContainerFormat",   containerFmtStr);
+    SetRegistryString(hClsidKey, L"MimeTypes",         L"image/heic,image/heif");
+    SetRegistryString(hClsidKey, L"Vendor",            vendorStr);
+    SetRegistryString(hClsidKey, L"Version",           L"1.0.0");
+    SetRegistryString(hClsidKey, L"SpecVersion",       L"1.0.0.0");
+    SetRegistryDword (hClsidKey, L"SupportAnimation",  0);
+    SetRegistryDword (hClsidKey, L"SupportChromaKey",  0);
+    SetRegistryDword (hClsidKey, L"SupportLossless",   0);
+    SetRegistryDword (hClsidKey, L"SupportMultiframe", 0);
 
     // 1a. InprocServer32
     HKEY hInproc = nullptr;
@@ -140,16 +145,17 @@ HRESULT RegisterWICDecoder(HMODULE hModule)
     RegCloseKey(hClsidKey);
 
     // -----------------------------------------------------------------------
-    // 2.  HKCR\CLSID\{CATID_WICBitmapDecoders}\Instance\{CLSID_HeicDecoder}
+    // 2.  WIC Decoder Category Instance — write to HKLM\SOFTWARE\Classes
+    //     (consistent with the CLSID key above, avoids HKCR split issues)
     //     CATID_WICBitmapDecoders = {7ED96837-96F0-4812-B211-F13C24117ED3}
     // -----------------------------------------------------------------------
     wchar_t instanceKeyPath[256] = {};
     _snwprintf_s(instanceKeyPath, _countof(instanceKeyPath), _TRUNCATE,
-                 L"CLSID\\{7ED96837-96F0-4812-B211-F13C24117ED3}\\Instance\\%s",
+                 L"SOFTWARE\\Classes\\CLSID\\{7ED96837-96F0-4812-B211-F13C24117ED3}\\Instance\\%s",
                  clsidStr);
 
     HKEY hInstanceKey = nullptr;
-    lr = RegCreateKeyExW(HKEY_CLASSES_ROOT, instanceKeyPath,
+    lr = RegCreateKeyExW(HKEY_LOCAL_MACHINE, instanceKeyPath,
                           0, nullptr, REG_OPTION_NON_VOLATILE,
                           KEY_WRITE, nullptr, &hInstanceKey, nullptr);
     if (lr != ERROR_SUCCESS) return HRESULT_FROM_WIN32(lr);
@@ -180,13 +186,13 @@ HRESULT UnregisterWICDecoder()
     if (lr != ERROR_SUCCESS && lr != ERROR_FILE_NOT_FOUND)
         return HRESULT_FROM_WIN32(lr);
 
-    // 2. Delete HKCR\CLSID\{CATID_WICBitmapDecoders}\Instance\{CLSID_HeicDecoder} subtree.
+    // 2. Delete HKLM\SOFTWARE\Classes\CLSID\{CATID}\Instance\{CLSID} subtree.
     wchar_t instanceKeyPath[256] = {};
     _snwprintf_s(instanceKeyPath, _countof(instanceKeyPath), _TRUNCATE,
-                 L"CLSID\\{7ED96837-96F0-4812-B211-F13C24117ED3}\\Instance\\%s",
+                 L"SOFTWARE\\Classes\\CLSID\\{7ED96837-96F0-4812-B211-F13C24117ED3}\\Instance\\%s",
                  clsidStr);
 
-    lr = RegDeleteTreeW(HKEY_CLASSES_ROOT, instanceKeyPath);
+    lr = RegDeleteTreeW(HKEY_LOCAL_MACHINE, instanceKeyPath);
     if (lr != ERROR_SUCCESS && lr != ERROR_FILE_NOT_FOUND)
         return HRESULT_FROM_WIN32(lr);
 
